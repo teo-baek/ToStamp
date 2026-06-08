@@ -32,6 +32,7 @@ async def create_store(
         owner_phone=request.owner_phone,
         store_name=request.store_name,
         stamp_goal=request.stamp_goal,
+        reward_price_krw=request.reward_price_krw,
         reward_description=request.reward_description,
     )
     db.add(store)

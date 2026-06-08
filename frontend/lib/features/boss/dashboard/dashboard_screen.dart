@@ -135,7 +135,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       StatCard(
                         label: '오늘 적립',
                         value: _todayStamps,
-                        icon: Icons.stamp_rounded,
+                        icon: Icons.approval,
                         color: AppColors.softOrange,
                         backgroundColor: AppColors.softOrangeBg,
                       ),
@@ -162,6 +162,53 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ),
                     ],
                   ),
+
+                const SizedBox(height: 24),
+
+                // AI 마케팅 직원 진입 배너
+                GestureDetector(
+                  onTap: () => Navigator.pushNamed(
+                    context,
+                    '/agent',
+                    arguments: widget.storeId,
+                  ),
+                  child: Container(
+                    padding: const EdgeInsets.all(18),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          AppColors.stampGold,
+                          AppColors.stampGold.withOpacity(0.75),
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.auto_awesome, color: Colors.white),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'AI 마케팅 직원',
+                                style: AppTypography.labelLarge
+                                    .copyWith(color: Colors.white),
+                              ),
+                              Text(
+                                '떠나려는 단골을 알아서 다시 모셔와요',
+                                style: AppTypography.bodySmall
+                                    .copyWith(color: Colors.white),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const Icon(Icons.chevron_right, color: Colors.white),
+                      ],
+                    ),
+                  ),
+                ),
 
                 const SizedBox(height: 24),
 

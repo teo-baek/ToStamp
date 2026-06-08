@@ -6,7 +6,7 @@ import enum
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, String, Uuid, func
+from sqlalchemy import DateTime, ForeignKey, Integer, String, Uuid, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -27,6 +27,9 @@ class Coupon(Base):
     stamp_card_id: Mapped[uuid.UUID] = mapped_column(
         Uuid(), ForeignKey("stamp_cards.id"), nullable=False
     )
+    # 발급 시점의 도장 1개 액면가 스냅샷(원). 이후 매장이 보상가격을 바꿔도
+    # 이미 발급된 쿠폰 가치는 고정.
+    face_value_krw: Mapped[int | None] = mapped_column(Integer, nullable=True)
     status: Mapped[str] = mapped_column(
         String(20), default=CouponStatus.AVAILABLE.value
     )

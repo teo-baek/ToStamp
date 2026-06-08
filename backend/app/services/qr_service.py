@@ -68,6 +68,20 @@ class QRService:
         parsed = json.loads(data)
         return uuid.UUID(parsed["guest_id"])
 
+    async def consume_token(self, token: str) -> uuid.UUID | None:
+        """
+        Atomically validate AND consume a QR token (single-use guard).
+        Returns the guest_id on first use; returns None on a reused/expired
+        token. Uses Redis GETDEL so concurrent double-taps or retries can
+        never double-earn a stamp (idempotency).
+        """
+        data = await self.redis.getdel(f"{self.QR_PREFIX}{token}")
+        if not data:
+            return None
+
+        parsed = json.loads(data)
+        return uuid.UUID(parsed["guest_id"])
+
     async def invalidate_token(self, token: str) -> None:
         """Manually invalidate a token (e.g., after successful scan)."""
         await self.redis.delete(f"{self.QR_PREFIX}{token}")

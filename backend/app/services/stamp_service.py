@@ -41,8 +41,10 @@ class StampService:
         4. Check completion → create coupon
         5. Publish real-time event via Redis
         """
-        # 1. Validate QR token → get guest_id
-        guest_id = await self.qr_service.validate_token(qr_token)
+        # 1. Validate AND consume QR token → get guest_id.
+        #    consume_token is single-use (atomic GETDEL): a double-tap or
+        #    network retry with the same token returns None → no double-earn.
+        guest_id = await self.qr_service.consume_token(qr_token)
         if guest_id is None:
             raise ValueError("Invalid or expired QR token")
 
@@ -96,10 +98,12 @@ class StampService:
         if is_completed:
             stamp_card.is_completed = True
             stamp_card.completed_at = datetime.now(timezone.utc)
-            # Create coupon
+            # Create coupon — snapshot the per-stamp face value at issuance
+            # so later reward-price changes do not alter this coupon's worth.
             coupon = Coupon(
                 stamp_card_id=stamp_card.id,
                 status=CouponStatus.AVAILABLE,
+                face_value_krw=store.reward_price_krw // store.stamp_goal,
             )
             self.db.add(coupon)
             await self.db.flush()
@@ -138,6 +142,8 @@ class StampService:
             is_completed=is_completed,
             store_name=store.store_name,
             reward_description=store.reward_description,
+            reward_price_krw=store.reward_price_krw,
+            face_value_krw=store.reward_price_krw // store.stamp_goal,
         )
 
     async def get_customer_cards(
@@ -160,6 +166,8 @@ class StampService:
                 "stamp_goal": store.stamp_goal,
                 "is_completed": card.is_completed,
                 "reward_description": store.reward_description,
+                "reward_price_krw": store.reward_price_krw,
+                "face_value_krw": store.reward_price_krw // store.stamp_goal,
                 "coupon_image_url": store.coupon_image_url,
                 "created_at": card.created_at,
             })

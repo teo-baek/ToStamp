@@ -36,17 +36,46 @@ async def lifespan(app: FastAPI):
         from app.models.stamp_card import StampCard  # noqa: F401
         from app.models.visit import Visit  # noqa: F401
         from app.models.coupon import Coupon  # noqa: F401
+        from app.models.agent_policy import (  # noqa: F401
+            AgentActionLog,
+            AgentPolicy,
+        )
+        from app.models.money import (  # noqa: F401
+            MoneyAccount,
+            MoneyTransaction,
+            StorePayable,
+        )
+        from app.models.marketplace import MarketplaceListing  # noqa: F401
+        from app.models.affiliate import (  # noqa: F401
+            AffiliateGroup,
+            AffiliateMember,
+            CoStampClaim,
+            CoStampEvent,
+            CrossPromo,
+        )
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
         logger.info("✅ SQLite tables created")
 
     await init_redis()
+
+    # Optional: AI marketing agent scheduler (auto-run for automation_mode=auto)
+    scheduler_task = None
+    if settings.agent_scheduler_enabled:
+        import asyncio
+
+        from app.services.scheduler import agent_scheduler_loop
+
+        scheduler_task = asyncio.create_task(agent_scheduler_loop())
+
     logger.info(f"✅ ToStamp API v{settings.app_version} ready")
 
     yield
 
     # Shutdown
     logger.info("🛑 ToStamp API shutting down...")
+    if scheduler_task is not None:
+        scheduler_task.cancel()
     await close_redis()
     logger.info("✅ Cleanup complete")
 
@@ -75,6 +104,9 @@ from app.api.v1.stamps import router as stamps_router
 from app.api.v1.stores import router as stores_router
 from app.api.v1.customers import router as customers_router
 from app.api.v1.notifications import router as notifications_router
+from app.api.v1.marketing import router as marketing_router
+from app.api.v1.exchange import router as exchange_router
+from app.api.v1.affiliate import router as affiliate_router
 from app.api.websocket import router as ws_router
 
 app.include_router(auth_router, prefix=settings.api_prefix)
@@ -82,6 +114,9 @@ app.include_router(stamps_router, prefix=settings.api_prefix)
 app.include_router(stores_router, prefix=settings.api_prefix)
 app.include_router(customers_router, prefix=settings.api_prefix)
 app.include_router(notifications_router, prefix=settings.api_prefix)
+app.include_router(marketing_router, prefix=settings.api_prefix)
+app.include_router(exchange_router, prefix=settings.api_prefix)
+app.include_router(affiliate_router, prefix=settings.api_prefix)
 app.include_router(ws_router)
 
 

@@ -16,8 +16,12 @@ class _StoreSetupScreenState extends State<StoreSetupScreen> {
   final _storeNameController = TextEditingController();
   final _phoneController = TextEditingController();
   final _rewardController = TextEditingController(text: '무료 음료 1잔');
+  final _rewardPriceController = TextEditingController(text: '5000');
   int _stampGoal = 10;
   bool _isLoading = false;
+
+  int get _rewardPrice => int.tryParse(_rewardPriceController.text.trim()) ?? 0;
+  int get _faceValue => _stampGoal > 0 ? _rewardPrice ~/ _stampGoal : 0;
 
   final ApiClient _api = ApiClient();
 
@@ -31,6 +35,7 @@ class _StoreSetupScreenState extends State<StoreSetupScreen> {
         ownerPhone: _phoneController.text,
         storeName: _storeNameController.text,
         stampGoal: _stampGoal,
+        rewardPriceKrw: _rewardPrice,
         rewardDescription: _rewardController.text,
       );
 
@@ -71,6 +76,7 @@ class _StoreSetupScreenState extends State<StoreSetupScreen> {
     _storeNameController.dispose();
     _phoneController.dispose();
     _rewardController.dispose();
+    _rewardPriceController.dispose();
     super.dispose();
   }
 
@@ -181,6 +187,40 @@ class _StoreSetupScreenState extends State<StoreSetupScreen> {
                 controller: _rewardController,
                 decoration: const InputDecoration(
                   hintText: '예: 무료 아메리카노 1잔',
+                ),
+              ),
+
+              const SizedBox(height: 24),
+
+              // 보상 금액 (원) — 도장 1개 액면가 산출의 기준
+              _buildLabel('보상 금액 (원)'),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _rewardPriceController,
+                keyboardType: TextInputType.number,
+                onChanged: (_) => setState(() {}),
+                decoration: const InputDecoration(
+                  hintText: '예: 5000',
+                  suffixText: '원',
+                ),
+                validator: (v) {
+                  final price = int.tryParse((v ?? '').trim());
+                  if (price == null || price <= 0) {
+                    return '보상 금액을 입력해주세요';
+                  }
+                  if (price % _stampGoal != 0) {
+                    return '도장 개수($_stampGoal개)로 나누어떨어지는 금액이어야 해요';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 6),
+              Text(
+                _rewardPrice > 0 && _rewardPrice % _stampGoal == 0
+                    ? '도장 1개 가치 = $_faceValue원 ($_rewardPrice원 ÷ $_stampGoal개)'
+                    : '도장 개수로 나누어떨어지는 금액을 입력하면 도장당 가치가 계산돼요',
+                style: AppTypography.bodySmall.copyWith(
+                  color: AppColors.warmGray,
                 ),
               ),
 

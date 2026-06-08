@@ -105,11 +105,11 @@ class _DynamicQRWidgetState extends State<DynamicQRWidget>
                     size: 200,
                     backgroundColor: Colors.white,
                     eyeStyle: const QrEyeStyle(
-                      eyeShape: QrEyeShape.roundedRect,
+                      eyeShape: QrEyeShape.circle,
                       color: AppColors.darkBrown,
                     ),
                     dataModuleStyle: const QrDataModuleStyle(
-                      dataModuleShape: QrDataModuleShape.roundedRect,
+                      dataModuleShape: QrDataModuleShape.circle,
                       color: AppColors.darkBrown,
                     ),
                   )

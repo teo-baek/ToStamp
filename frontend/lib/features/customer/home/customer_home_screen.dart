@@ -10,6 +10,8 @@ import '../../../shared/widgets/glass_card.dart';
 import 'widgets/dynamic_qr.dart';
 import 'widgets/stamp_card.dart';
 import 'widgets/stamp_animation.dart';
+import '../exchange/exchange_screen.dart';
+import '../affiliate/neighbors_screen.dart';
 
 /// 고객 홈 화면 — QR + 스탬프 카드
 class CustomerHomeScreen extends StatefulWidget {
@@ -192,6 +194,42 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                                       ),
                                     ],
                                   ),
+                                ),
+                                // 이웃 매장(상생) 진입
+                                IconButton(
+                                  onPressed: _guestId == null
+                                      ? null
+                                      : () => Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (_) => NeighborsScreen(
+                                                guestId: _guestId!,
+                                              ),
+                                            ),
+                                          ),
+                                  icon: const Icon(
+                                    Icons.holiday_village_outlined,
+                                    color: AppColors.warmBrown,
+                                  ),
+                                  tooltip: '우리 동네 이웃 매장',
+                                ),
+                                // 거래소 진입
+                                IconButton(
+                                  onPressed: _guestId == null
+                                      ? null
+                                      : () => Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (_) => ExchangeScreen(
+                                                guestId: _guestId!,
+                                              ),
+                                            ),
+                                          ),
+                                  icon: const Icon(
+                                    Icons.storefront_outlined,
+                                    color: AppColors.warmBrown,
+                                  ),
+                                  tooltip: '도장 거래소',
                                 ),
                                 // 프로필 아바타
                                 CircleAvatar(

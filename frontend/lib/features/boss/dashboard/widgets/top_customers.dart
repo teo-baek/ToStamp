@@ -1,22 +1,45 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/network/api_client.dart';
 
-/// 단골 TOP 고객 리스트 위젯
-class TopCustomersWidget extends StatelessWidget {
+/// 단골 TOP 고객 리스트 위젯 — 실제 세그먼테이션 API 연동
+class TopCustomersWidget extends StatefulWidget {
   final String storeId;
 
   const TopCustomersWidget({super.key, required this.storeId});
 
   @override
-  Widget build(BuildContext context) {
-    // MVP: 더미 데이터 (실제 API 연동 필요)
-    final topCustomers = [
-      {'rank': 1, 'name': '김민지', 'visits': 23, 'stamps': 8},
-      {'rank': 2, 'name': '이준호', 'visits': 19, 'stamps': 5},
-      {'rank': 3, 'name': '박서연', 'visits': 15, 'stamps': 3},
-    ];
+  State<TopCustomersWidget> createState() => _TopCustomersWidgetState();
+}
 
+class _TopCustomersWidgetState extends State<TopCustomersWidget> {
+  final ApiClient _api = ApiClient();
+  List<Map<String, dynamic>> _customers = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    try {
+      final data = await _api.getTopCustomers(widget.storeId, limit: 5);
+      if (mounted) {
+        setState(() {
+          _customers = data.cast<Map<String, dynamic>>();
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -41,12 +64,38 @@ class TopCustomersWidget extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 8),
-        ...topCustomers.map((customer) => _buildCustomerRow(customer)),
+        if (_isLoading)
+          const Padding(
+            padding: EdgeInsets.all(20),
+            child: Center(
+              child: CircularProgressIndicator(color: AppColors.stampGold),
+            ),
+          )
+        else if (_customers.isEmpty)
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: AppColors.warmWhite,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Center(
+              child: Text(
+                '아직 단골 데이터가 없어요',
+                style: AppTypography.bodySmall.copyWith(
+                  color: AppColors.warmGray,
+                ),
+              ),
+            ),
+          )
+        else
+          ..._customers.asMap().entries.map(
+                (e) => _buildCustomerRow(e.key + 1, e.value),
+              ),
       ],
     );
   }
 
-  Widget _buildCustomerRow(Map<String, dynamic> customer) {
+  Widget _buildCustomerRow(int rank, Map<String, dynamic> customer) {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -66,7 +115,7 @@ class TopCustomersWidget extends StatelessWidget {
             ),
             child: Center(
               child: Text(
-                '${customer['rank']}',
+                '$rank',
                 style: AppTypography.labelMedium.copyWith(
                   color: AppColors.stampGold,
                   fontWeight: FontWeight.w700,
@@ -79,7 +128,7 @@ class TopCustomersWidget extends StatelessWidget {
           // 이름
           Expanded(
             child: Text(
-              customer['name'] as String,
+              (customer['display_name'] as String?) ?? '손님',
               style: AppTypography.bodyMedium.copyWith(
                 color: AppColors.darkBrown,
                 fontWeight: FontWeight.w500,
@@ -89,7 +138,7 @@ class TopCustomersWidget extends StatelessWidget {
 
           // 방문 횟수
           Text(
-            '${customer['visits']}회 방문',
+            '${customer['visits'] ?? 0}회 방문',
             style: AppTypography.bodySmall.copyWith(
               color: AppColors.warmGray,
             ),
@@ -107,7 +156,7 @@ class TopCustomersWidget extends StatelessWidget {
               ),
               const SizedBox(width: 2),
               Text(
-                '${customer['stamps']}',
+                '${customer['max_stamps'] ?? 0}',
                 style: AppTypography.labelMedium.copyWith(
                   color: AppColors.softOrange,
                   fontWeight: FontWeight.w700,

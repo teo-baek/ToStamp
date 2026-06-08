@@ -36,6 +36,10 @@ class FakeRedis:
     async def get(self, key: str) -> str | None:
         return self._store.get(key)
 
+    async def getdel(self, key: str) -> str | None:
+        self._ttls.pop(key, None)
+        return self._store.pop(key, None)
+
     async def delete(self, *keys: str):
         for key in keys:
             self._store.pop(key, None)

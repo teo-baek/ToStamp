@@ -75,41 +75,70 @@ async def list_tools() -> list[Tool]:
     ]
 
 
+def _json(payload: dict) -> list[TextContent]:
+    return [TextContent(type="text", text=json.dumps(payload, default=str, ensure_ascii=False))]
+
+
 @mcp_server.call_tool()
 async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent]:
-    """Execute a tool invocation from the AI agent."""
+    """Execute a tool invocation from the AI agent (wired to real services)."""
+    import uuid as _uuid
+
+    from app.database import async_session
+    from app.services.agent_service import AgentService
+    from app.services.segmentation_service import SegmentationService
+    from app.services.stamp_service import StampService
+
     logger.info(f"MCP tool called: {name} with args: {arguments}")
 
-    if name == "query_store_stats":
-        # In production, this would query the actual database
-        return [TextContent(
-            type="text",
-            text=json.dumps({
-                "note": "MCP tool placeholder — connect to StampService in production",
-                "store_id": arguments.get("store_id"),
-            }),
-        )]
+    try:
+        store_id = _uuid.UUID(str(arguments["store_id"]))
+    except (KeyError, ValueError):
+        return _json({"error": "valid store_id (UUID) is required"})
 
-    elif name == "query_customer_segments":
-        return [TextContent(
-            type="text",
-            text=json.dumps({
-                "note": "MCP tool placeholder — implement segmentation query",
-                "store_id": arguments.get("store_id"),
-                "segment": arguments.get("segment", "all"),
-            }),
-        )]
+    try:
+        redis_client = None
+        try:
+            from app.redis_client import get_redis
+            redis_client = get_redis()
+        except Exception:
+            pass
 
-    elif name == "send_targeted_push":
-        return [TextContent(
-            type="text",
-            text=json.dumps({
-                "note": "MCP tool placeholder — integrate with FCMService",
-                "status": "queued",
-            }),
-        )]
+        async with async_session() as db:
+            if name == "query_store_stats":
+                stats = await StampService(db, redis_client).get_store_dashboard(store_id)
+                return _json({"store_id": str(store_id), "stats": stats})
 
-    return [TextContent(type="text", text=f"Unknown tool: {name}")]
+            elif name == "query_customer_segments":
+                seg = SegmentationService(db)
+                segment = arguments.get("segment", "all")
+                if segment in ("all", None):
+                    return _json({
+                        "store_id": str(store_id),
+                        "counts": await seg.get_segment_counts(store_id),
+                    })
+                members = await seg.get_segment(store_id, segment)
+                return _json({
+                    "store_id": str(store_id),
+                    "segment": segment,
+                    "count": len(members),
+                    "customers": [
+                        {"display_name": m.display_name, "visits": m.visits,
+                         "days_since_last": m.days_since_last}
+                        for m in members[:50]
+                    ],
+                })
+
+            elif name == "send_targeted_push":
+                # 자율 에이전트 1회 실행으로 위임 (예산 한도 내 복귀 도장).
+                summary = await AgentService(db, redis_client).run_pass(store_id)
+                await db.commit()
+                return _json({"store_id": str(store_id), "result": summary})
+
+        return _json({"error": f"Unknown tool: {name}"})
+    except Exception as e:
+        logger.error(f"MCP tool {name} failed: {e}")
+        return _json({"error": str(e)})
 
 
 # ── Resources: Read-only context for the AI ────────────────────────

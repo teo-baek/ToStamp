@@ -1,6 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import '../theme/app_colors.dart';
+import '../../core/theme/app_colors.dart';
 
 /// 글래스모피즘 카드 위젯
 /// 종이 쿠폰 이미지 위에 반투명 글래스 레이어를 얹는 효과

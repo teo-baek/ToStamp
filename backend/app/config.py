@@ -36,6 +36,10 @@ class Settings(BaseSettings):
     # QR Token
     qr_token_ttl_seconds: int = 180  # 3분
 
+    # AI 마케팅 에이전트 스케줄러
+    agent_scheduler_enabled: bool = False
+    agent_scheduler_interval_seconds: int = 60 * 60 * 24  # 기본 1일
+
     # CORS
     cors_origins: list[str] = ["*"]
 

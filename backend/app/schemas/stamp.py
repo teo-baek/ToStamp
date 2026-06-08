@@ -24,6 +24,8 @@ class StampEarnResponse(BaseModel):
     is_completed: bool
     store_name: str
     reward_description: str
+    reward_price_krw: int = 0
+    face_value_krw: int = Field(default=0, description="도장 1개 액면가(원)")
 
 
 class StampCardResponse(BaseModel):
@@ -35,6 +37,8 @@ class StampCardResponse(BaseModel):
     stamp_goal: int
     is_completed: bool
     reward_description: str
+    reward_price_krw: int = 0
+    face_value_krw: int = Field(default=0, description="도장 1개 액면가(원)")
     coupon_image_url: str | None
     created_at: datetime
 
