@@ -210,6 +210,47 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                 ),
 
+                const SizedBox(height: 12),
+
+                // 상권 연합 관리 진입
+                GestureDetector(
+                  onTap: () => Navigator.pushNamed(
+                    context,
+                    '/affiliate-admin',
+                    arguments: widget.storeId,
+                  ),
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: AppColors.warmWhite,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: AppColors.stampGoldLight),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.groups_rounded,
+                            color: AppColors.stampGold),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('상권 연합 관리',
+                                  style: AppTypography.labelLarge.copyWith(
+                                      color: AppColors.darkBrown)),
+                              Text('이웃 매장과 공동 이벤트·교차 프로모',
+                                  style: AppTypography.bodySmall
+                                      .copyWith(color: AppColors.warmGray)),
+                            ],
+                          ),
+                        ),
+                        const Icon(Icons.chevron_right,
+                            color: AppColors.warmGray),
+                      ],
+                    ),
+                  ),
+                ),
+
                 const SizedBox(height: 24),
 
                 // 단골 TOP 고객 섹션

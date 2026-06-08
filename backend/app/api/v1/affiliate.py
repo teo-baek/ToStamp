@@ -50,6 +50,14 @@ async def add_member(
     return {"group_id": str(group_id), "store_id": str(m.store_id)}
 
 
+@router.get("/stores/{store_id}/groups", response_model=list[GroupResponse])
+async def groups_for_store(
+    store_id: uuid.UUID, db: AsyncSession = Depends(get_db)
+):
+    """매장이 속한 상권 연합 그룹 목록 (사장님 admin용)."""
+    return await _svc(db).groups_for_store(store_id)
+
+
 @router.get("/groups/{group_id}/members", response_model=list[StoreBrief])
 async def list_members(group_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
     """그룹 멤버 매장 목록."""

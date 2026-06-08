@@ -88,6 +88,25 @@ class AffiliateService:
         await self.db.flush()
         return member
 
+    async def groups_for_store(self, store_id: uuid.UUID) -> list[AffiliateGroup]:
+        """매장이 속한 상권 연합 그룹들."""
+        group_ids = [
+            r[0]
+            for r in (
+                await self.db.execute(
+                    select(AffiliateMember.group_id).where(
+                        AffiliateMember.store_id == store_id
+                    )
+                )
+            ).all()
+        ]
+        if not group_ids:
+            return []
+        rows = await self.db.execute(
+            select(AffiliateGroup).where(AffiliateGroup.id.in_(group_ids))
+        )
+        return list(rows.scalars().all())
+
     async def list_members(self, group_id: uuid.UUID) -> list[Store]:
         ids = await self._member_store_ids(group_id)
         if not ids:

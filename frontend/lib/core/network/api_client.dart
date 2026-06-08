@@ -241,6 +241,76 @@ class ApiClient {
     return response.data;
   }
 
+  // ── Affiliate admin (사장님) ─────────────────────
+
+  /// 매장 목록 (멤버 선택용)
+  Future<List<dynamic>> listStores({int limit = 100}) async {
+    final response = await _dio
+        .get('/api/v1/stores/', queryParameters: {'limit': limit});
+    return response.data;
+  }
+
+  /// 내 매장이 속한 상권 연합 그룹
+  Future<List<dynamic>> getMyGroups(String storeId) async {
+    final response =
+        await _dio.get('/api/v1/affiliate/stores/$storeId/groups');
+    return response.data;
+  }
+
+  /// 상권 연합 그룹 생성
+  Future<Map<String, dynamic>> createGroup(String name) async {
+    final response =
+        await _dio.post('/api/v1/affiliate/groups', data: {'name': name});
+    return response.data;
+  }
+
+  /// 그룹에 매장 추가
+  Future<void> addGroupMember(String groupId, String storeId) async {
+    await _dio.post('/api/v1/affiliate/groups/$groupId/members',
+        data: {'store_id': storeId});
+  }
+
+  /// 그룹 멤버 매장 목록
+  Future<List<dynamic>> getGroupMembers(String groupId) async {
+    final response =
+        await _dio.get('/api/v1/affiliate/groups/$groupId/members');
+    return response.data;
+  }
+
+  /// 이웃 쿠폰 교차 노출 프로모 생성
+  Future<void> createCrossPromo({
+    required String groupId,
+    required String storeId,
+    required String title,
+    required int bonusStamps,
+  }) async {
+    await _dio.post('/api/v1/affiliate/groups/$groupId/cross-promos', data: {
+      'store_id': storeId,
+      'title': title,
+      'bonus_stamps': bonusStamps,
+    });
+  }
+
+  /// 공동 적립 이벤트 생성
+  Future<void> createCoStampEvent({
+    required String groupId,
+    required String title,
+    required int requiredVisits,
+    required String rewardStoreId,
+    required String startAtIso,
+    required String endAtIso,
+    String rewardDescription = '상권 투어 완성 보너스',
+  }) async {
+    await _dio.post('/api/v1/affiliate/groups/$groupId/events', data: {
+      'title': title,
+      'required_visits': requiredVisits,
+      'reward_store_id': rewardStoreId,
+      'start_at': startAtIso,
+      'end_at': endAtIso,
+      'reward_description': rewardDescription,
+    });
+  }
+
   // ── Affiliate / 상생망 API ───────────────────────
 
   /// 이웃 매장 웰컴 프로모 (아직 방문 안 한 연합 매장)

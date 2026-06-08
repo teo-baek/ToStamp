@@ -22,6 +22,18 @@ from app.services.stamp_service import StampService
 router = APIRouter(prefix="/stores", tags=["stores"])
 
 
+@router.get("/", response_model=list[StoreResponse])
+async def list_stores(
+    limit: int = 100,
+    db: AsyncSession = Depends(get_db),
+):
+    """매장 목록 (상권 연합 멤버 선택 등 admin용)."""
+    result = await db.execute(
+        select(Store).order_by(Store.created_at.desc()).limit(limit)
+    )
+    return list(result.scalars().all())
+
+
 @router.post("/", response_model=StoreResponse, status_code=201)
 async def create_store(
     request: StoreCreate,
