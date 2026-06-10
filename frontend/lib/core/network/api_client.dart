@@ -1,9 +1,13 @@
+import 'dart:typed_data';
 import 'package:dio/dio.dart';
 
 /// API 클라이언트 — FastAPI 백엔드 통신
 class ApiClient {
-  static const String _baseUrl = 'http://10.0.2.2:8080'; // Android emulator
-  // static const String _baseUrl = 'http://localhost:8080'; // iOS simulator
+  // 빌드 시 --dart-define=API_BASE=http://<서버주소>:8080 로 주입
+  static const String _baseUrl = String.fromEnvironment(
+    'API_BASE',
+    defaultValue: 'http://10.0.2.2:8080', // Android emulator 기본값
+  );
 
   late final Dio _dio;
 
@@ -119,6 +123,15 @@ class ApiClient {
   }
 
   // ── Marketing API (세그먼트 / AI 에이전트) ───────────
+
+  /// 세그먼트별 고객 목록
+  Future<List<dynamic>> getSegmentMembers(
+      String storeId, String segment) async {
+    final response = await _dio.get(
+      '/api/v1/marketing/stores/$storeId/segments/$segment',
+    );
+    return response.data;
+  }
 
   /// 단골 TOP 고객
   Future<List<dynamic>> getTopCustomers(String storeId, {int limit = 5}) async {
@@ -239,6 +252,20 @@ class ApiClient {
       data: {'store_id': storeId, 'qty': qty},
     );
     return response.data;
+  }
+
+  /// 매장 쿠폰 이미지 업로드
+  Future<String> uploadStoreImage(String storeId, Uint8List bytes,
+      {String fileName = 'coupon.jpg'}) async {
+    final formData = FormData.fromMap({
+      'file': MultipartFile.fromBytes(bytes, filename: fileName),
+    });
+    final response = await _dio.post(
+      '/api/v1/stores/$storeId/image',
+      data: formData,
+      options: Options(contentType: 'multipart/form-data'),
+    );
+    return response.data['coupon_image_url'] as String;
   }
 
   // ── Affiliate admin (사장님) ─────────────────────

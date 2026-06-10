@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'core/theme/app_theme.dart';
 import 'features/boss/affiliate/affiliate_admin_screen.dart';
 import 'features/boss/agent/agent_screen.dart';
+import 'features/boss/crm/crm_screen.dart';
 import 'features/boss/dashboard/dashboard_screen.dart';
 import 'features/boss/scanner/scanner_screen.dart';
 import 'features/boss/store_setup/store_setup_screen.dart';
@@ -50,6 +51,11 @@ class BossApp extends StatelessWidget {
             final storeId = settings.arguments as String;
             return MaterialPageRoute(
               builder: (_) => AffiliateAdminScreen(storeId: storeId),
+            );
+          case '/crm':
+            final storeId = settings.arguments as String;
+            return MaterialPageRoute(
+              builder: (_) => CrmScreen(storeId: storeId),
             );
           default:
             return MaterialPageRoute(

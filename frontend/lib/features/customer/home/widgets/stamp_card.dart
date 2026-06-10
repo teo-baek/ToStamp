@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../shared/widgets/glass_card.dart';
+import '../../coupons/coupons_screen.dart';
 
 /// 스탬프 카드 위젯 — 종이 쿠폰 느낌의 도장판
 class StampCardWidget extends StatelessWidget {
@@ -11,6 +12,7 @@ class StampCardWidget extends StatelessWidget {
   final String rewardDescription;
   final String? couponImageUrl;
   final bool isCompleted;
+  final String? guestId;
 
   const StampCardWidget({
     super.key,
@@ -20,6 +22,7 @@ class StampCardWidget extends StatelessWidget {
     required this.rewardDescription,
     this.couponImageUrl,
     this.isCompleted = false,
+    this.guestId,
   });
 
   @override
@@ -126,7 +129,15 @@ class StampCardWidget extends StatelessWidget {
                 if (isCompleted)
                   TextButton(
                     onPressed: () {
-                      // TODO: Navigate to coupon use screen
+                      if (guestId != null) {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) =>
+                                CouponsScreen(guestId: guestId!),
+                          ),
+                        );
+                      }
                     },
                     style: TextButton.styleFrom(
                       foregroundColor: AppColors.stampGold,

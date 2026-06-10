@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:kakao_flutter_sdk/kakao_flutter_sdk.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/network/api_client.dart';
@@ -175,11 +176,79 @@ class DeferredLoginScreen extends StatelessWidget {
   }
 
   Future<void> _handleKakaoLogin(BuildContext context) async {
-    // TODO: Kakao SDK 연동
-    // 1. kakao_flutter_sdk로 로그인
-    // 2. access_token 획득
-    // 3. API: POST /auth/kakao { kakao_access_token, guest_id }
-    // 4. 병합 결과 확인 → 성공 토스트
-    onLoginSuccess?.call();
+    // 카카오 앱 키 미설정 체크
+    const kakaoNativeKey = String.fromEnvironment('KAKAO_NATIVE_APP_KEY');
+    if (kakaoNativeKey.isEmpty) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+                '카카오 앱 키가 설정되지 않았습니다 (빌드 시 --dart-define 필요)'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+      return;
+    }
+
+    try {
+      // 카카오톡 설치 여부에 따라 로그인 방법 선택
+      OAuthToken token;
+      if (await isKakaoTalkInstalled()) {
+        token = await UserApi.instance.loginWithKakaoTalk();
+      } else {
+        token = await UserApi.instance.loginWithKakaoAccount();
+      }
+
+      // GuestId 조회
+      final uuid = UUIDManager();
+      final guestId = await uuid.getGuestId();
+      if (guestId == null) {
+        throw Exception('Guest ID를 찾을 수 없습니다');
+      }
+
+      // 백엔드 카카오 로그인 + 계정 병합
+      final api = ApiClient();
+      final result = await api.kakaoLogin(
+        kakaoAccessToken: token.accessToken,
+        guestId: guestId,
+      );
+
+      // 병합 결과: merged_guest_id 등 처리
+      final mergedId = result['guest_id'] as String?;
+      if (mergedId != null && mergedId != guestId) {
+        await uuid.setGuestId(mergedId);
+      }
+      final customerId = result['customer_id'] as String?;
+      if (customerId != null) {
+        await uuid.setCustomerId(customerId);
+      }
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('카카오 로그인 성공! 기존 도장이 유지됩니다 🎉'),
+            backgroundColor: AppColors.success,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12)),
+          ),
+        );
+      }
+
+      onLoginSuccess?.call();
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('로그인 실패: $e'),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12)),
+          ),
+        );
+      }
+    }
   }
 }

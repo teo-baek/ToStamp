@@ -52,7 +52,11 @@ class _TopCustomersWidgetState extends State<TopCustomersWidget> {
             ),
             TextButton(
               onPressed: () {
-                // TODO: Navigate to full CRM
+                Navigator.pushNamed(
+                  context,
+                  '/crm',
+                  arguments: widget.storeId,
+                );
               },
               child: Text(
                 '전체 CRM →',

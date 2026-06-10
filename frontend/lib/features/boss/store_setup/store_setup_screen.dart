@@ -1,4 +1,6 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/network/api_client.dart';
@@ -20,10 +22,29 @@ class _StoreSetupScreenState extends State<StoreSetupScreen> {
   int _stampGoal = 10;
   bool _isLoading = false;
 
+  // 이미지 피커
+  XFile? _pickedImage;
+  Uint8List? _pickedImageBytes;
+  final ImagePicker _imagePicker = ImagePicker();
+
   int get _rewardPrice => int.tryParse(_rewardPriceController.text.trim()) ?? 0;
   int get _faceValue => _stampGoal > 0 ? _rewardPrice ~/ _stampGoal : 0;
 
   final ApiClient _api = ApiClient();
+
+  Future<void> _pickImage() async {
+    final file = await _imagePicker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 85,
+      maxWidth: 1200,
+    );
+    if (file == null) return;
+    final bytes = await file.readAsBytes();
+    setState(() {
+      _pickedImage = file;
+      _pickedImageBytes = Uint8List.fromList(bytes);
+    });
+  }
 
   Future<void> _saveStore() async {
     if (!_formKey.currentState!.validate()) return;
@@ -38,6 +59,20 @@ class _StoreSetupScreenState extends State<StoreSetupScreen> {
         rewardPriceKrw: _rewardPrice,
         rewardDescription: _rewardController.text,
       );
+
+      // 이미지 선택된 경우 업로드
+      if (_pickedImageBytes != null && result['id'] != null) {
+        try {
+          final imageUrl = await _api.uploadStoreImage(
+            result['id'] as String,
+            _pickedImageBytes!,
+            fileName: _pickedImage?.name ?? 'coupon.jpg',
+          );
+          result['coupon_image_url'] = imageUrl;
+        } catch (_) {
+          // 이미지 업로드 실패 시 무시하고 계속 진행
+        }
+      }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -230,38 +265,72 @@ class _StoreSetupScreenState extends State<StoreSetupScreen> {
               _buildLabel('종이 쿠폰 사진 (선택)'),
               const SizedBox(height: 8),
               GestureDetector(
-                onTap: () {
-                  // TODO: Image picker
-                },
+                onTap: _pickImage,
                 child: Container(
                   height: 120,
                   decoration: BoxDecoration(
                     color: AppColors.warmWhite,
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(
-                      color: AppColors.stampEmpty,
+                      color: _pickedImage != null
+                          ? AppColors.stampGold.withOpacity(0.5)
+                          : AppColors.stampEmpty,
                       width: 1.5,
                     ),
                   ),
-                  child: Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.add_photo_alternate_outlined,
-                          color: AppColors.warmGray,
-                          size: 36,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          '기존 쿠폰 사진 업로드',
-                          style: AppTypography.bodySmall.copyWith(
-                            color: AppColors.warmGray,
+                  clipBehavior: Clip.hardEdge,
+                  child: _pickedImageBytes != null
+                      ? Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            Image.memory(
+                              _pickedImageBytes!,
+                              fit: BoxFit.cover,
+                            ),
+                            Positioned(
+                              top: 6,
+                              right: 6,
+                              child: GestureDetector(
+                                onTap: () => setState(() {
+                                  _pickedImage = null;
+                                  _pickedImageBytes = null;
+                                }),
+                                child: Container(
+                                  width: 24,
+                                  height: 24,
+                                  decoration: BoxDecoration(
+                                    color: Colors.black54,
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: const Icon(
+                                    Icons.close,
+                                    color: Colors.white,
+                                    size: 16,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        )
+                      : Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.add_photo_alternate_outlined,
+                                color: AppColors.warmGray,
+                                size: 36,
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                '기존 쿠폰 사진 업로드',
+                                style: AppTypography.bodySmall.copyWith(
+                                  color: AppColors.warmGray,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                      ],
-                    ),
-                  ),
                 ),
               ),
 

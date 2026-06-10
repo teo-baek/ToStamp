@@ -1,10 +1,11 @@
 """
-Stores API — 매장 CRUD, 대시보드.
+Stores API — 매장 CRUD, 대시보드, 쿠폰 이미지 업로드.
 """
 
 import uuid
+from pathlib import Path
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, UploadFile
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -83,6 +84,48 @@ async def update_store(
 
     await db.flush()
     return store
+
+
+_IMAGE_TYPES = {
+    "image/jpeg": ".jpg",
+    "image/png": ".png",
+    "image/webp": ".webp",
+}
+_IMAGE_MAX_BYTES = 5 * 1024 * 1024  # 5MB
+_STATIC_DIR = Path(__file__).resolve().parents[3] / "static"
+
+
+@router.post("/{store_id}/image")
+async def upload_store_image(
+    store_id: uuid.UUID,
+    file: UploadFile,
+    db: AsyncSession = Depends(get_db),
+):
+    """매장 쿠폰 이미지 업로드 → /static 저장 후 coupon_image_url 갱신."""
+    result = await db.execute(select(Store).where(Store.id == store_id))
+    store = result.scalar_one_or_none()
+    if not store:
+        raise HTTPException(status_code=404, detail="Store not found")
+
+    ext = _IMAGE_TYPES.get(file.content_type or "")
+    if ext is None:
+        raise HTTPException(
+            status_code=400,
+            detail=f"지원하지 않는 이미지 형식입니다. 허용: {sorted(_IMAGE_TYPES)}",
+        )
+
+    data = await file.read()
+    if len(data) > _IMAGE_MAX_BYTES:
+        raise HTTPException(status_code=413, detail="이미지는 5MB 이하여야 합니다")
+
+    image_dir = _STATIC_DIR / "store_images"
+    image_dir.mkdir(parents=True, exist_ok=True)
+    filename = f"{store.id.hex}{ext}"
+    (image_dir / filename).write_bytes(data)
+
+    store.coupon_image_url = f"/static/store_images/{filename}"
+    await db.flush()
+    return {"coupon_image_url": store.coupon_image_url}
 
 
 @router.get("/{store_id}/dashboard", response_model=StoreDashboard)

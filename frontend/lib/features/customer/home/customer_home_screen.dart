@@ -313,6 +313,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                                       card['reward_description'] ?? '',
                                   couponImageUrl: card['coupon_image_url'],
                                   isCompleted: card['is_completed'] ?? false,
+                                  guestId: _guestId,
                                 ),
                               );
                             },

@@ -4,7 +4,11 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 
 /// WebSocket 클라이언트 — 실시간 도장 적립 이벤트 수신
 class WSClient {
-  static const String _baseUrl = 'ws://10.0.2.2:8080'; // Android emulator
+  // 빌드 시 --dart-define=WS_BASE=ws://<서버주소>:8080 로 주입
+  static const String _baseUrl = String.fromEnvironment(
+    'WS_BASE',
+    defaultValue: 'ws://10.0.2.2:8080', // Android emulator 기본값
+  );
 
   WebSocketChannel? _channel;
   Timer? _heartbeatTimer;

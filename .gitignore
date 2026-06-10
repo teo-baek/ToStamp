@@ -10,8 +10,12 @@ backend/.venv/
 
 # SQLite / local DBs
 *.db
+*.db.bak-*
 *.sqlite
 *.sqlite3
+
+# Runtime uploads
+backend/static/store_images/
 
 # ── Flutter / Dart / frontend ─────────────────────
 frontend/.dart_tool/

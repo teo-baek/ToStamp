@@ -5,9 +5,11 @@ ToStamp API — FastAPI 메인 엔트리포인트.
 
 import logging
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from app.config import get_settings
 from app.redis_client import close_redis, init_redis
@@ -118,6 +120,12 @@ app.include_router(marketing_router, prefix=settings.api_prefix)
 app.include_router(exchange_router, prefix=settings.api_prefix)
 app.include_router(affiliate_router, prefix=settings.api_prefix)
 app.include_router(ws_router)
+
+
+# Static files (매장 쿠폰 이미지 등)
+_static_dir = Path(__file__).resolve().parents[1] / "static"
+_static_dir.mkdir(parents=True, exist_ok=True)
+app.mount("/static", StaticFiles(directory=_static_dir), name="static")
 
 
 @app.get("/health")
