@@ -6,11 +6,10 @@ Marketing API — 고객 세그먼트, 단골 TOP, AI 마케팅 에이전트(정
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.models.agent_policy import AgentPolicy, AutomationMode
+from app.models.agent_policy import AutomationMode
 from app.redis_client import get_redis
 from app.schemas.marketing import (
     AgentPolicyResponse,

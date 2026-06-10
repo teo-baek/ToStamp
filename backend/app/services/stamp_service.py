@@ -3,7 +3,6 @@ Stamp Service — 도장 적립 핵심 비즈니스 로직.
 스캔 → 적립 → 쿠폰 생성 → 실시간 알림 플로우.
 """
 
-import json
 import uuid
 from datetime import datetime, timezone
 

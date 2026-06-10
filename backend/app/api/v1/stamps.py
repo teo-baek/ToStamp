@@ -5,7 +5,7 @@ Stamps API — 도장 적립, 스탬프 카드 조회, 쿠폰 관리.
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import select, update
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db

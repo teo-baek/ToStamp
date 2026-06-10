@@ -23,6 +23,7 @@ from app.models.customer import Customer
 from app.models.stamp_card import StampCard
 from app.models.store import Store
 from app.models.visit import Visit
+from app.services.stamp_helpers import add_stamps, customer_by_guest
 
 
 class AffiliateError(ValueError):
@@ -34,14 +35,7 @@ class AffiliateService:
         self.db = db
 
     async def _customer_by_guest(self, guest_id: uuid.UUID) -> Customer:
-        c = (
-            await self.db.execute(
-                select(Customer).where(Customer.guest_id == guest_id)
-            )
-        ).scalar_one_or_none()
-        if c is None:
-            raise AffiliateError("Customer not found")
-        return c
+        return await customer_by_guest(self.db, guest_id, AffiliateError)
 
     async def _member_store_ids(self, group_id: uuid.UUID) -> list[uuid.UUID]:
         rows = await self.db.execute(
@@ -118,41 +112,7 @@ class AffiliateService:
     async def _add_stamps(
         self, customer_id: uuid.UUID, store: Store, qty: int
     ) -> int:
-        coupons = 0
-        remaining = qty
-        while remaining > 0:
-            card = (
-                await self.db.execute(
-                    select(StampCard).where(
-                        StampCard.customer_id == customer_id,
-                        StampCard.store_id == store.id,
-                        StampCard.is_completed == False,  # noqa: E712
-                    )
-                )
-            ).scalar_one_or_none()
-            if card is None:
-                card = StampCard(
-                    customer_id=customer_id, store_id=store.id, current_stamps=0
-                )
-                self.db.add(card)
-                await self.db.flush()
-            space = store.stamp_goal - card.current_stamps
-            add = min(space, remaining)
-            card.current_stamps += add
-            remaining -= add
-            if card.current_stamps >= store.stamp_goal:
-                card.is_completed = True
-                card.completed_at = datetime.now(timezone.utc)
-                self.db.add(
-                    Coupon(
-                        stamp_card_id=card.id,
-                        status=CouponStatus.AVAILABLE,
-                        face_value_krw=store.reward_price_krw // store.stamp_goal,
-                    )
-                )
-                coupons += 1
-            await self.db.flush()
-        return coupons
+        return await add_stamps(self.db, customer_id, store, qty)
 
     # ── 공동 적립 이벤트 ──────────────────────────────
     async def create_event(

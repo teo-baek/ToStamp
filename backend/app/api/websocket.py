@@ -4,9 +4,7 @@ Redis Pub/Sub → WebSocket 브릿지.
 """
 
 import asyncio
-import json
 import logging
-import uuid
 from collections import defaultdict
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect

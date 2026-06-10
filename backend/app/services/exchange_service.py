@@ -12,7 +12,6 @@ from datetime import datetime, timezone
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.coupon import Coupon, CouponStatus
 from app.models.customer import Customer
 from app.models.marketplace import ListingStatus, MarketplaceListing
 from app.models.money import (
@@ -24,6 +23,7 @@ from app.models.money import (
 )
 from app.models.stamp_card import StampCard
 from app.models.store import Store
+from app.services.stamp_helpers import add_stamps, customer_by_guest
 
 # 선불전자지급수단 면제 한도 (전자금융거래법 2024.9.15) — 머니 발행잔액 모니터링.
 ISSUANCE_LIMIT_KRW = 3_000_000_000     # 30억
@@ -40,14 +40,7 @@ class ExchangeService:
 
     # ── 고객/계정 헬퍼 ────────────────────────────────
     async def _customer_by_guest(self, guest_id: uuid.UUID) -> Customer:
-        c = (
-            await self.db.execute(
-                select(Customer).where(Customer.guest_id == guest_id)
-            )
-        ).scalar_one_or_none()
-        if c is None:
-            raise ExchangeError("Customer not found")
-        return c
+        return await customer_by_guest(self.db, guest_id, ExchangeError)
 
     async def get_or_create_account(self, customer_id: uuid.UUID) -> MoneyAccount:
         acc = (
@@ -106,41 +99,7 @@ class ExchangeService:
     async def _add_stamps(
         self, customer_id: uuid.UUID, store: Store, qty: int
     ) -> int:
-        coupons = 0
-        remaining = qty
-        while remaining > 0:
-            card = (
-                await self.db.execute(
-                    select(StampCard).where(
-                        StampCard.customer_id == customer_id,
-                        StampCard.store_id == store.id,
-                        StampCard.is_completed == False,  # noqa: E712
-                    )
-                )
-            ).scalar_one_or_none()
-            if card is None:
-                card = StampCard(
-                    customer_id=customer_id, store_id=store.id, current_stamps=0
-                )
-                self.db.add(card)
-                await self.db.flush()
-            space = store.stamp_goal - card.current_stamps
-            add = min(space, remaining)
-            card.current_stamps += add
-            remaining -= add
-            if card.current_stamps >= store.stamp_goal:
-                card.is_completed = True
-                card.completed_at = datetime.now(timezone.utc)
-                self.db.add(
-                    Coupon(
-                        stamp_card_id=card.id,
-                        status=CouponStatus.AVAILABLE,
-                        face_value_krw=store.reward_price_krw // store.stamp_goal,
-                    )
-                )
-                coupons += 1
-            await self.db.flush()
-        return coupons
+        return await add_stamps(self.db, customer_id, store, qty)
 
     # ── 매장 도장 직접 구매 (경로①: 고객 자금 → 매장 채무) ──
     async def buy_store_stamps(

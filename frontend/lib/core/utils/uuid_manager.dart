@@ -45,35 +45,14 @@ class UUIDManager {
     await _write(_guestIdKey, guestId);
   }
 
-  /// Customer ID 가져오기
-  Future<String?> getCustomerId() async {
-    return await _read(_customerIdKey);
-  }
-
   /// Customer ID 저장
   Future<void> setCustomerId(String customerId) async {
     await _write(_customerIdKey, customerId);
   }
 
-  /// QR 토큰 저장
-  Future<void> setQRToken(String token) async {
-    await _write(_qrTokenKey, token);
-  }
-
-  /// QR 토큰 가져오기
-  Future<String?> getQRToken() async {
-    return await _read(_qrTokenKey);
-  }
-
   /// 로컬 UUID 생성 (게스트 ID 미등록 시)
   String generateLocalUUID() {
     return const Uuid().v4();
-  }
-
-  /// 게스트 등록 여부 확인
-  Future<bool> isRegistered() async {
-    final guestId = await getGuestId();
-    return guestId != null;
   }
 
   /// 전체 데이터 초기화 (로그아웃 시)

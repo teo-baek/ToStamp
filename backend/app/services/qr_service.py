@@ -56,18 +56,6 @@ class QRService:
 
         return token, expires_at
 
-    async def validate_token(self, token: str) -> uuid.UUID | None:
-        """
-        Validate a QR token and return the guest_id if valid.
-        Returns None if expired or invalid.
-        """
-        data = await self.redis.get(f"{self.QR_PREFIX}{token}")
-        if not data:
-            return None
-
-        parsed = json.loads(data)
-        return uuid.UUID(parsed["guest_id"])
-
     async def consume_token(self, token: str) -> uuid.UUID | None:
         """
         Atomically validate AND consume a QR token (single-use guard).
@@ -81,7 +69,3 @@ class QRService:
 
         parsed = json.loads(data)
         return uuid.UUID(parsed["guest_id"])
-
-    async def invalidate_token(self, token: str) -> None:
-        """Manually invalidate a token (e.g., after successful scan)."""
-        await self.redis.delete(f"{self.QR_PREFIX}{token}")

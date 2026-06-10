@@ -4,6 +4,7 @@ CI/CD 파이프라인에서 1초 미만 assertion으로 게이트 역할.
 """
 
 import asyncio
+import os
 import statistics
 import sys
 import time
@@ -11,7 +12,8 @@ import time
 import httpx
 
 
-API_BASE = "http://localhost:8080"
+# cloudbuild latency-test 스텝이 배포된 Cloud Run URL을 API_BASE로 주입한다.
+API_BASE = os.environ.get("API_BASE", "http://localhost:8080")
 LATENCY_THRESHOLD_MS = 1000  # 1초
 
 

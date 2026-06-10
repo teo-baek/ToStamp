@@ -3,7 +3,6 @@ Redis client for caching, QR token management, and Pub/Sub messaging.
 Falls back to in-memory dict when Redis is unavailable (local dev).
 """
 
-import json
 import logging
 from typing import Any
 

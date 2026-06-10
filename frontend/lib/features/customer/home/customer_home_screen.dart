@@ -10,6 +10,7 @@ import '../../../shared/widgets/glass_card.dart';
 import 'widgets/dynamic_qr.dart';
 import 'widgets/stamp_card.dart';
 import 'widgets/stamp_animation.dart';
+import '../auth/deferred_login_screen.dart';
 import '../exchange/exchange_screen.dart';
 import '../affiliate/neighbors_screen.dart';
 
@@ -113,7 +114,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
   }
 
   void _showCouponEarnedDialog(Map<String, dynamic> data) {
-    showDialog(
+    showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: AppColors.warmWhite,
@@ -147,7 +148,15 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
           ),
         ],
       ),
-    );
+    ).then((_) {
+      // 쿠폰 달성 직후 지연 가입(카카오 로그인) 유도 — 도장이 걸려 있는 시점
+      if (!mounted) return;
+      DeferredLoginScreen.show(
+        context,
+        storeName: data['store_name'] ?? '',
+        reward: data['reward_description'] ?? '무료 혜택',
+      );
+    });
   }
 
   @override
